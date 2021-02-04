@@ -9,6 +9,8 @@ Created on Sat Jan 30 09:13:08 2021
 import numpy as np
 import matplotlib.pyplot as plt
 import itertools as it
+import improved_Sheather_Jones as isj
+from scipy import ndimage
 
 power_dataset = "power_data.txt"
 ecg_dataset = "ecg_data.txt"
@@ -78,7 +80,6 @@ ax1.set_xlabel('Timestamp in day')
 
 def STR(time_series):
     v2 = np.median(np.unique(time_series))
-    print(v2)
     
     def test_str(t):
         if t < v2:
@@ -88,12 +89,68 @@ def STR(time_series):
     vtest = np.vectorize(test_str)
     discrete_time_series = vtest(time_series)
     
-    return [ (key, sum(1 for _ in group)) for key, group in it.groupby(discrete_time_series)], discrete_time_series
+    return [ (sum(1 for _ in group), key) for key, group in it.groupby(discrete_time_series)], discrete_time_series
     
 
 str_power_d, dis_ts = STR(power_d)
 
-print(str_power_d)
 
+"""
 plt.scatter(np.arange(np.shape(power_d[:1000])[0]) ,power_d[:1000], c = dis_ts[:1000])
+"""
+
+np_str_power = np.array(str_power_d)
+
+t = 1000
+
+st_bin_one = [ run_length for run_length, bins in np_str_power[:t] if bins == 1 ]
+st_bin_two = [ run_length for run_length, bins in np_str_power[:t] if bins == 2 ]
+
+def make_clusters(train_set):
+    
+    h = isj.hsj(train_set)
+    n = np.shape(train_set)[0]
+
+    def PDF(example, data):
+    
+        
+        factor = 1 / (h * n)
+    
+        return factor * np.sum( ndimage.gaussian_filter1d((example - data) / h, h))
+    
+    
+    
+    return [PDF(x, st_bin_one) for x in st_bin_one]
+    
+
+
+bin_one_cluster = make_clusters(st_bin_one)
+
+print(np.unique(bin_one_cluster))
+print()
+print()
+
+bin_two_cluster = make_clusters(st_bin_two)
+
+print(np.unique(bin_two_cluster))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
